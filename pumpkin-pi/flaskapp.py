@@ -14,13 +14,19 @@ def index():
 @app.route('/blink', methods=['POST'])
 def blink_lights():
     print "Blinking Light!!!"
-    pumpkin.multi_blink(pumpkin.eyes, 1, 5 )
+    pumpkin.multi_blink([23, 24], 1, 5 )
     return render_template('index.html')
     
 @app.route('/sound', methods=['POST'])
 def sound():
     print "Playing Sound"
     pumpkin.play_sound()
+    return render_template('index.html')
+
+@app.route('/watch', methods=['POST'])
+def watch():
+    print "Watching for movement!!!"
+    pumpkin.run()
     return render_template('index.html')
  
 if __name__ == '__main__':

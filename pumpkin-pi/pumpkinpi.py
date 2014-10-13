@@ -16,7 +16,7 @@ VERY_SLOW = 2
 
 pins = {LEFT_LED:  (GPIO.OUT, 'LED'),
         RIGHT_LED: (GPIO.OUT, 'LED'),
-        PIR_POWER: (GPIO.OUT, 'SENSOR_POWER')
+        PIR_POWER: (GPIO.OUT, 'SENSOR_POWER'),
         PIR_SENSE: (GPIO.IN,  'SENSOR')
 }
 
@@ -30,9 +30,10 @@ class PumpkinPi(object):
 #        self.gpio = PumpkinGPIO(mode, pins)
         self.mode = mode
         self.pins = pins
+        self.setup_pins(mode, pins)
         
     def run(self):
-        t = Watcher()
+        t = Watcher(self)
         t.start()
         self.loop_thread = t
         
@@ -42,7 +43,7 @@ class PumpkinPi(object):
     def blink_lights(self):
         pass
     
-    def multi_blink(pins, duration, repeat=1):
+    def multi_blink(self, pins, duration, repeat=1):
         for i in range(0, repeat):
             for pin in pins:
                  GPIO.output(pin, GPIO.HIGH)
@@ -69,7 +70,7 @@ class PumpkinPi(object):
         GPIO.cleanup()
         GPIO.setmode(mode)
         for pin in pins.keys():
-            GPIO.setup(pin, pins[pin])
+            GPIO.setup(pin, pins[pin][0])
 
     def cleanup_gpio():
         pass
@@ -125,7 +126,8 @@ class Watcher(threading.Thread):
     blink and sounds will play if speakers are connected.
     Depends on a PumpkinGPIO object.
     """
-    def __init__(self, gpio):
+    def __init__(self, controller):
+        self.controller = controller
         self.stoprequest = threading.Event()
     
     def run(self):
@@ -137,12 +139,10 @@ class Watcher(threading.Thread):
                 if movement == True:
                     print "I sense movement!!!"
                     play_sound()
-                    #blink.multi_blinks(blink.pattern02)
-                    blink.dual_blink(RIGHT_LED, LEFT_LED, blink.VERY_FAST,
-                                     repeat=100)
+                    self.controller.multi_blibnk([23, 24], 1, 8) 
                     time.sleep(10)
                 else:
-                    print "."
+                    print ".",
                     time.sleep(5)
 
             except KeyboardInterrupt:
