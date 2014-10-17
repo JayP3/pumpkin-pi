@@ -32,13 +32,11 @@ class PumpkinPi(object):
 #        self.gpio = PumpkinGPIO(mode, pins)
         self.mode = mode
         self.pins = pins
-        self.setup_pins(mode, pins)
 
     def run(self):
         self.kill_thread.clear()
         t = Watcher(self, self.kill_thread)
         t.start()
-        self.loop_thread = t
 
     def stop(self):
         print "Killing the Watcher thread"
@@ -76,6 +74,27 @@ class PumpkinPi(object):
 
     def cleanup_gpio():
         GPIO.cleanup()
+
+
+class Controller(object):
+    def __init__(self):
+        pass
+
+    def multi_blink(self, pins, duration, repeat=1):
+        for i in range(0, repeat):
+            for pin in pins:
+                GPIO.output(pin, GPIO.HIGH)
+            time.sleep(duration)
+            for pin in pins:
+                GPIO.output(pin, GPIO.LOW)
+            time.sleep(duration)
+
+    def play_sound(self):
+        sounds = os.listdir(os.path.join(os.getcwd(), 'sounds'))
+        num = random.randint(0, len(sounds) - 1)
+        fname = os.path.join('sounds', sounds[num])
+        cmd = 'mpg321 -g 500 %s &' % fname
+        os.system(cmd)
 
 
 class PumpkinGPIO(object):
