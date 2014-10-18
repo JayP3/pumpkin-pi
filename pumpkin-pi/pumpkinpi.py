@@ -32,10 +32,11 @@ class PumpkinPi(object):
 #        self.gpio = PumpkinGPIO(mode, pins)
         self.mode = mode
         self.pins = pins
+        self.setup_pins(mode, pins)
 
     def run(self):
         self.kill_thread.clear()
-        t = Watcher(self, self.kill_thread)
+        t = Watcher(self.kill_thread)
         t.start()
 
     def stop(self):
@@ -55,7 +56,8 @@ class PumpkinPi(object):
             time.sleep(duration)
 
     def play_sound(self):
-        sounds = os.listdir(os.path.join(os.getcwd(), 'sounds'))
+        sounddir = os.path.join(os.getcwd(), 'sounds')
+        sounds = [x for x in os.listdir(sounddir) if x.lower().endswith('.mp3')]
         num = random.randint(0, len(sounds) - 1)
         fname = os.path.join('sounds', sounds[num])
         cmd = 'mpg321 -g 500 %s &' % fname
@@ -77,8 +79,8 @@ class PumpkinPi(object):
 
 
 class Controller(object):
-    def __init__(self):
-        pass
+#    def __init__(self, pins):
+       # self.pins = pins
 
     def multi_blink(self, pins, duration, repeat=1):
         for i in range(0, repeat):
@@ -90,7 +92,8 @@ class Controller(object):
             time.sleep(duration)
 
     def play_sound(self):
-        sounds = os.listdir(os.path.join(os.getcwd(), 'sounds'))
+        sounddir = os.path.join(os.getcwd(), 'sounds')
+        sounds = [x for x in os.listdir(sounddir) if x.lower().endswith('.mp3')]
         num = random.randint(0, len(sounds) - 1)
         fname = os.path.join('sounds', sounds[num])
         cmd = 'mpg321 -g 500 %s &' % fname
@@ -149,23 +152,24 @@ class Watcher(threading.Thread):
     blink and sounds will play if speakers are connected.
     Depends on a PumpkinGPIO object.
     """
-    def __init__(self, controller, stop):
+    def __init__(self, stop):
         threading.Thread.__init__(self)
-        self.controller = controller
+        self.controller = Controller()
         self.stoprequest = stop
 
     def run(self):
+        print "Starting thread"
         time.sleep(10)
         GPIO.output(PIR_POWER, GPIO.HIGH)
 
         while not self.stoprequest.is_set():
-            movement = GPIO.input(4)
+            movement = GPIO.input(PIR_SENSE)
 
             try:
-                if movement is True:
+                if movement:
                     print "I sense movement!!!"
                     self.controller.play_sound()
-                    self.controller.multi_blibnk([23, 24], 1, 8)
+                    self.controller.multi_blink([RIGHT_LED, LEFT_LED], 1, 8)
                     time.sleep(10)
                 else:
                     print ".",
@@ -173,9 +177,7 @@ class Watcher(threading.Thread):
 
             except KeyboardInterrupt:
                 break
-
-        GPIO.cleanup()
-        exit()
+        GPIO.output(PIR_POWER, GPIO.LOW)
 
 
 def simple_blink(pin, duration):
@@ -236,3 +238,12 @@ pattern01 = (rightblnk_M, left_blnk_M, rightblnk_M,
 pattern02 = (dl_blnk_F, rightblnk_F, left_blnk_F, dl_blnk_F)
 
 pattern02 = (dl_blnk_F,)
+
+if __name__ == '__main__':
+    pumpkin = PumpkinPi(GPIO.BCM, pins)
+    watch = Watcher(pumpkin.kill_thread)
+    watch.start()
+    t = threading.Timer(90.0, pumpkin.stop)
+    t.start()
+    watch.join()
+

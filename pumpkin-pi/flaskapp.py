@@ -28,12 +28,14 @@ def sound():
 
 @app.route('/watch', methods=['POST'])
 def watch():
-    if request.form['value'] == 'Start Watching':
+    if request.form['watcher'] == 'Start Watching':
         print "Watching for movement!!!"
         pumpkin.run()
-    elif request.form['value'] == 'Stop Watching':
+    elif request.form['watcher'] == 'Stop Watching':
         print "Stopping the Watch thread"
         pumpkin.stop()
+    else:
+        print "Bad request???"
 
     return render_template('index.html')
 
