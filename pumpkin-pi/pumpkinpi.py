@@ -29,7 +29,6 @@ class PumpkinPi(object):
     def __init__(self, mode, pins):
         """Initialize a PumpkinGPIO object"""
         self.kill_thread = threading.Event()
-#        self.gpio = PumpkinGPIO(mode, pins)
         self.mode = mode
         self.pins = pins
         self.setup_pins(mode, pins)
@@ -42,9 +41,6 @@ class PumpkinPi(object):
     def stop(self):
         print "Killing the Watcher thread"
         self.kill_thread.set()
-
-    def blink_lights(self):
-        pass
 
     def multi_blink(self, pins, duration, repeat=1):
         for i in range(0, repeat):
@@ -74,13 +70,11 @@ class PumpkinPi(object):
         for pin in pins.keys():
             GPIO.setup(pin, pins[pin][0])
 
-    def cleanup_gpio():
+    def cleanup_gpio(self):
         GPIO.cleanup()
 
 
 class Controller(object):
-#    def __init__(self, pins):
-       # self.pins = pins
 
     def multi_blink(self, pins, duration, repeat=1):
         for i in range(0, repeat):
@@ -98,53 +92,6 @@ class Controller(object):
         fname = os.path.join('sounds', sounds[num])
         cmd = 'mpg321 -g 500 %s &' % fname
         os.system(cmd)
-
-
-class PumpkinGPIO(object):
-    """This is where all the info regarding what is connected
-    to the GPIO pins on the Raspberry Pi.
-    Valid GPIO pins are:
-        *****Raspberry Pi Model B (4, 17, 18, 21, 22, 23, 24, 25)*****
-        *****List additional available pins on Model B+*****
-    """
-    def __init__(self, mode, pins):
-        """Set up the devices connected to the pins.
-        Give each device a number relating to the
-        BCM number of the pin.
-        Arguments:
-          mode: GPIO.BCM or GPIO.BOARD. See Python RPi.GPIO for details.
-          pins (dict): Keys = the pin numbers, values = GPIO.IN or GPIO.OUT
-        """
-        self.mode = mode
-        self.pins = pins
-
-    def set_output(self, pin, output):
-        """For pins set to GPIO.OUT, change their output from low to high.
-        """
-        GPIO.output(pin, output)
-
-    def read_input(self, pin):
-        """Read the value of a pin
-        Arguments:
-          pin (int): the number of the GPIO pin
-        """
-        return GPIO.input(pin)
-
-    def setup_pins(self, mode, pins):
-        """Set up pins for input or output.
-        Resets all pins before anything is set.
-        Arguments:
-          mode       : Either GPIO.BCM or GPIO.BOARD
-          pins (dict): A dictionary of pin numbers and pin setup,
-                      (GPIO.IN or GPIO.OUT.
-        """
-        GPIO.cleanup()
-        GPIO.setmode(mode)
-        for pin in pins.keys():
-            GPIO.setup(pin, pins[pin])
-
-    def cleanup(self):
-        GPIO.cleanup()
 
 
 class Watcher(threading.Thread):
@@ -180,70 +127,12 @@ class Watcher(threading.Thread):
         GPIO.output(PIR_POWER, GPIO.LOW)
 
 
-def simple_blink(pin, duration):
-    GPIO.output(pin, GPIO.HIGH)
-    time.sleep(duration)
-    GPIO.output(pin, GPIO.LOW)
-    time.sleep(duration)
-
-
-def complex_blink(pin, on_time, off_time):
-    GPIO.output(pin, GPIO.HIGH)
-    time.sleep(on_time)
-    GPIO.output(pin, GPIO.LOW)
-    time.sleep(off_time)
-
-
-def repeated_blink(pin, duration, repeat=1):
-    i = 0
-    while i < repeat:
-        simple_blink(pin, duration)
-        simple_blink(pin, duration)
-        complex_blink(pin, duration * 4, duration)
-        i += 1
-
-
-def multi_blink(((pins), duration, rest)):
-    for pin in pins:
-        GPIO.output(pin, GPIO.HIGH)
-    time.sleep(duration)
-    for pin in pins:
-        GPIO.output(pin, GPIO.LOW)
-    if rest:
-        time.sleep(rest)
-
-
-def multi_blinks(pattern, repeat=1):
-    """
-    pattern is a list or tuple, where each element is ((pins), duration, rest)
-    """
-    for r in range(0, repeat):
-        for i in pattern:
-            multi_blink(i)
-
-
-rightblnk_M = ((RIGHT_LED,), MEDIUM, 0)
-left_blnk_M = ([LEFT_LED], MEDIUM, 0)
-rightblnk_F = ((RIGHT_LED,), FAST, 0)
-left_blnk_F = ([LEFT_LED], FAST, 0)
-dl_blnk_F = ((LEFT_LED, RIGHT_LED), FAST, FAST)
-dl_blnk_S = ((LEFT_LED, RIGHT_LED), SLOW, SLOW)
-
-pattern01 = (rightblnk_M, left_blnk_M, rightblnk_M,
-             left_blnk_M, dl_blnk_F, dl_blnk_F,
-             dl_blnk_F, dl_blnk_F
-             )
-
-
-pattern02 = (dl_blnk_F, rightblnk_F, left_blnk_F, dl_blnk_F)
-
-pattern02 = (dl_blnk_F,)
-
 if __name__ == '__main__':
     pumpkin = PumpkinPi(GPIO.BCM, pins)
-    watch = Watcher(pumpkin.kill_thread)
-    watch.start()
-    t = threading.Timer(90.0, pumpkin.stop)
-    t.start()
-    watch.join()
-
+    print "Testing LED Lights"
+    GPIO.output(RIGHT_LED, GPIO.HIGH)
+    GPIO.output(LEFT_LED, GPIO.HIGH)
+    raw_input("Press enter to turn lights off")
+    GPIO.output(RIGHT_LED, GPIO.LOW)
+    GPIO.output(LEFT_LED, GPIO.LOW)
+    pumpkin.cleanup_gpio()
